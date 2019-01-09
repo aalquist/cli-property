@@ -245,45 +245,94 @@ function retrieveHostnames(app, targetProperty, version) {
 
 function modifyProperty(app, targetProperty, options, command) {
     let version = numberVersion(options.propver) ? numberVersion(options.propver) : 0;
-    if (options.new) {
-            return app.createNewPropertyVersion(targetProperty)
-        }
-    if (options.addhosts.length > 0) {
-            return app.addHostnames(targetProperty, version, options.addhosts, options.edgehostname);
-        } 
-    if (options.delhosts.length > 0) {
-            return app.delHostnames(targetProperty, version, options.delhosts)
-        }
-    if (options.origin || options.forward) {
-            return app.setOrigin(targetProperty, version, options.origin, options.forward);
-        }
-    if (options.edgehostname && command != "create") {
-            return app.assignEdgeHostname(targetProperty, version, options.edgehostname, options.new);
-        }
-    if (options.notes) {
-            return app.setComments(targetProperty, version, options.notes);
-        } 
-    if (options.variables) {
-            return app.setVariables(targetProperty, version, options.variables);
-        }
-    if (options.cpcode) {
-            return app.setCpcode(targetProperty, version, options.cpcode)
-        }
-    if (options.move) {
-            return app.moveProperty(targetProperty, options.move)
-        }
-    if (options.ruleformat) {
-            return app.setRuleFormat(targetProperty, version, options.ruleformat)
-        } 
-    if (options.sureroutemap || options.surerouteto || options.sureroutetohost) {
-            return app.setSureRoute(targetProperty,
-                                            version, 
-                                            options.sureroutemap, 
-                                            options.surerouteto,
-                                            options.sureroutetohost);
-        }
+
+    return new Promise((resolve, reject) => {
+      if(options.new){
+        return resolve(app.createNewPropertyVersion(targetProperty, options.propver));
+      }else{
+         return resolve();
+      }
+    })
+    .then(data => {
+      if(!isNaN(data)){ // A new version was created, we update following options on the new version
+        version = data;
+      }
+      if(options.addhosts.length > 0){
+        return Promise.resolve(app.addHostnames(targetProperty, version, options.addhosts, options.edgehostname));
+      }else{
+         return Promise.resolve();
+      }
+    })
+    .then(data => {
+      if(options.delhosts.length > 0){
+        return Promise.resolve(app.delHostnames(targetProperty, version, options.delhosts));
+      }else{
+         return Promise.resolve();
+      }
+    })
+    .then(data => {
+      if(options.origin || options.forward){
+        return Promise.resolve(app.setOrigin(targetProperty, version, options.origin, options.forward));
+      }else{
+         return Promise.resolve();
+      }
+    })
+    .then(data => {
+      if(options.notes){
+        return Promise.resolve(app.setComments(targetProperty, version, options.notes));
+      }else{
+         return Promise.resolve();
+      }
+    })
+    .then(data => {
+      if(options.edgehostname && command != "create"){
+        return Promise.resolve(app.assignEdgeHostname(targetProperty, version, options.edgehostname, options.new));
+      }else{
+         return Promise.resolve();
+      }
+    })
+    .then(data => {
+      if(options.variables){
+        return Promise.resolve(app.setVariables(targetProperty, version, options.variables));
+      }else{
+         return Promise.resolve();
+      }
+    })
+    .then(data => {
+      if(options.cpcode){
+        return Promise.resolve(app.setCpcode(targetProperty, version, options.cpcode));
+      }else{
+         return Promise.resolve();
+      }
+    })
+    .then(data => {
+      if(options.move){
+        return Promise.resolve(app.moveProperty(targetProperty, options.move));
+      }else{
+         return Promise.resolve();
+      }
+    })
+    .then(data => {
+      if(options.ruleformat){
+        return Promise.resolve(app.setRuleFormat(targetProperty, version, options.ruleformat));
+      }else{
+         return Promise.resolve();
+      }
+    })
+    .then(data => {
+      if(options.sureroutemap || options.surerouteto || options.sureroutetohost){
+        return Promise.resolve(app.setSureRoute(targetProperty,
+                                        version, 
+                                        options.sureroutemap, 
+                                        options.surerouteto,
+                                        options.sureroutetohost));
+      }else{
+         return Promise.resolve();
+      }
+    })
 }
 
+//TODO is it receiving stag/prod/latest on any scenario? or always number
 function numberVersion(version) {
     if (version == null) {
         return 0;
