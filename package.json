@@ -34,6 +34,7 @@
     "yargs": "^10.0.3"
   },
   "devDependencies": {
+    "command-line-test": "^1.0.10",
     "eslint": "^5.10.0",
     "eslint-config-loopback": "^13.0.0",
     "gulp": "^4.0.0",
