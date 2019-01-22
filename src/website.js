@@ -1840,7 +1840,6 @@ class WebSite {
                     propertyId,
                     null,
                     null,
-                    null,
                     false,
                     version);
             }).then(data => {
