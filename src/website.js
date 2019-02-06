@@ -769,7 +769,7 @@ class WebSite {
         })
     }
 
-    _updatePropertyRules(propertyLookup, version, rules) {
+    _updatePropertyRules(propertyLookup, version, rules, dryRun = false) {
         return this._getProperty(propertyLookup)
             .then((data) => {
                 //set basic data like contract & group
@@ -780,21 +780,16 @@ class WebSite {
                 return new Promise((resolve, reject) => {
                     console.error(`... updating property (${propertyName}) v${version}`);
 
-                    let request;
-
-                    if (rules.ruleFormat && rules.ruleFormat != "latest" ) {
-                        request = {
-                                method: 'PUT',
-                                path: `/papi/v1/properties/${propertyId}/versions/${version}/rules?contractId=${contractId}&groupId=${groupId}`,
-                                body: rules,
-                                headers: {'Content-Type':'application/vnd.akamai.papirules.' + rules.ruleFormat + '+json'}
-                        }
-                    } else {
-                        request = {
-                                method: 'PUT',
-                                path: `/papi/v1/properties/${propertyId}/versions/${version}/rules?contractId=${contractId}&groupId=${groupId}`,
-                                body: rules
-                        }
+                    let request = {
+                        method: 'PUT',
+                        path: `/papi/v1/properties/${propertyId}/versions/${version}/rules?contractId=${contractId}&groupId=${groupId}`,
+                        body: rules
+                    }
+                    if(dryRun) { // dryrun will only be sent from update command and not modify
+                        request.path += "&dryRun=true";
+                    }
+                    if(rules.ruleFormat && rules.ruleFormat !== "latest") {
+                        request.headers = {'Content-Type':'application/vnd.akamai.papirules.' + rules.ruleFormat + '+json'};
                     }
                     
                     this._edge.auth(request);
@@ -1633,7 +1628,7 @@ class WebSite {
      * @param {Object} newRules of the configuration to be updated. Only the {object}.rules will be copied.
      * @returns {Promise} with the property rules as the {TResult}
      */
-    update(propertyLookup, newRules, comment = false) {
+    update(propertyLookup, newRules, comment = false, dryRun = false) {
         let property = propertyLookup;
 
         return this._getProperty(propertyLookup)
@@ -1642,11 +1637,11 @@ class WebSite {
                 let propertyName = localProp.propertyName;
                 console.error(`Updating ${propertyName}`);
                 const version = property.latestVersion;
-                return this._copyPropertyVersion(property, version);
+                return dryRun ? version : this._copyPropertyVersion(property, version);
             })
-            .then(newVersionId => {
-                property.latestVersion = newVersionId;
-                return this.retrieve(property, newVersionId);
+            .then(VersionToUpdate => {
+                property.latestVersion = VersionToUpdate;
+                return this.retrieve(property, VersionToUpdate);
             })
             .then(oldRules => {
                 let updatedRules = newRules;
@@ -1656,7 +1651,7 @@ class WebSite {
                    updatedRules.comments = comment;
                  }
                  console.log(updatedRules)
-                return this._updatePropertyRules(property, oldRules.propertyVersion, updatedRules);
+                return this._updatePropertyRules(property, oldRules.propertyVersion, updatedRules, dryRun);
             });
     }
 
@@ -1671,7 +1666,7 @@ class WebSite {
      *     Only the {Object}.rules will be copied
      * @returns {Promise} returns a promise with the updated form of the
      */
-    updateFromFile(propertyLookup, srcFile, comment = false) {
+    updateFromFile(propertyLookup, srcFile, comment = false, dryRun = false) {
         return new Promise((resolve, reject) => {
             fs.readFile(untildify(srcFile), (err, data) => {
                 if (err) {
@@ -1682,9 +1677,9 @@ class WebSite {
             });
 
         })
-            .then(data => {
-                return this.update(propertyLookup, data, comment)
-            })
+        .then(data => {
+            return this.update(propertyLookup, data, comment, dryRun);
+        })
     }
 
     /**
@@ -1698,11 +1693,11 @@ class WebSite {
      * @param {string} toProperty either colloquial host name (www.example.com) or canonical PropertyId (prp_123456)
      * @returns {Promise} returns a promise with the TResult of boolean
      */
-    copy(fromProperty, fromVersion = LATEST_VERSION.LATEST, toProperty, comment = false) {
+    copy(fromProperty, fromVersion = LATEST_VERSION.LATEST, toProperty, comment = false, dryRun = false) {
         return this.retrieve(fromProperty, fromVersion)
             .then(fromRules => {
                 console.error(`Copy ${fromProperty} v${fromRules.propertyVersion} to ${toProperty}`);
-                return this.update(toProperty, fromRules, comment)
+                return this.update(toProperty, fromRules, comment, dryRun);
             });
     }
 

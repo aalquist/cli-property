@@ -111,12 +111,15 @@ function updateProperty(app, targetProperty, options) {
     if (options.file)
         return app.updateFromFile( targetProperty,
                                         options.file,
-                                        options.notes);
+                                        options.notes,
+                                        options.dryrun);
 
     if (options.srcprop)
-        return app.copy(   options.srcprop,
-                                numberVersion(options.srcver),
-                                targetProperty, options.notes);
+        return app.copy( options.srcprop,
+                          numberVersion(options.srcver),
+                          targetProperty, 
+                          options.notes,
+                          options.dryrun);
     return Promise.resolve();
 }
 
@@ -248,10 +251,10 @@ function modifyProperty(app, targetProperty, options, command) {
     if (options.new) {
             return app.createNewPropertyVersion(targetProperty)
         }
-    if (options.addhosts.length > 0) {
+    if (options.addhosts && options.addhosts.length > 0) {
             return app.addHostnames(targetProperty, version, options.addhosts, options.edgehostname);
         } 
-    if (options.delhosts.length > 0) {
+    if (options.delhosts && options.delhosts.length > 0) {
             return app.delHostnames(targetProperty, version, options.delhosts)
         }
     if (options.origin || options.forward) {
@@ -641,6 +644,9 @@ function main () {
             .file('--file <path>', {
               desc: 'File with JSON rules',
               mustExist: true // again, assuming this is what you want
+            })
+            .boolean('--dryrun', {
+              desc: 'run validations without saving rule tree'
             })
             .string('--notes <notes>', {
                 desc: 'Version notes for the property version'
